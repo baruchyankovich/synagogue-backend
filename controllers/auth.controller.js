@@ -3,11 +3,14 @@ import bcryptjs from 'bcryptjs';
 import { generateTokenAndSetCookie } from '../utils/generateTokenAndSetCookie.js';
 import { sendVerificationEmail } from '../mailtra/emails.js';
 
+
 import { generateVerificationToken } from "../utils/generateVerificationToken.js";
 import { sendPasswordResetEmail,
 	sendResetSuccessEmail,
 	
 	sendWelcomeEmail, } from '../mailtra/emails.js';
+    import crypto from 'crypto';
+
 
 
 export const signup = async (req, res) => {
@@ -97,6 +100,14 @@ export const login = async(req, res) => {
         if(!user){
             res.status.json({success:false,message: "Invalid caredentials"})
         }
+        res.status(200).json({
+            success:true,
+            message:"hi",
+            user:{
+                ...user._doc,
+                password :undefined
+            }
+        })
 
     }catch(error){
 
@@ -117,9 +128,9 @@ export const forgotPassword = async (req, res) => {
 			return res.status(400).json({ success: false, message: "User not found" });
 		}
 
-		// Generate reset token
+		
 		const resetToken = crypto.randomBytes(20).toString("hex");
-		const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000; // 1 hour
+		const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000; 
 
 		user.resetPasswordToken = resetToken;
 		user.resetPasswordExpiresAt = resetTokenExpiresAt;
