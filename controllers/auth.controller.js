@@ -92,26 +92,35 @@ export const verifyEmail = async (req, res) => {
 };
 
 
-export const login = async(req, res) => {
-    const {email ,password} = req.body;
-    try{
-        const user =await User.findOne({email})
+export const login = async (req, res) => {
+	const { email, password } = req.body;
+	try {
+		const user = await User.findOne({ email });
+		if (!user) {
+			return res.status(400).json({ success: false, message: "Invalid credentials" });
+		}
+		const isPasswordValid = await bcryptjs.compare(password, user.password);
+		if (!isPasswordValid) {
+			return res.status(400).json({ success: false, message: "Invalid credentials" });
+		}
 
-        if(!user){
-            res.status.json({success:false,message: "Invalid caredentials"})
-        }
-        res.status(200).json({
-            success:true,
-            message:"hi",
-            user:{
-                ...user._doc,
-                password :undefined
-            }
-        })
+		generateTokenAndSetCookie(res, user._id);
 
-    }catch(error){
+		user.lastLogin = new Date();
+		await user.save();
 
-    }
+		res.status(200).json({
+			success: true,
+			message: "Logged in successfully",
+			user: {
+				...user._doc,
+				password: undefined,
+			},
+		});
+	} catch (error) {
+		console.log("Error in login ", error);
+		res.status(400).json({ success: false, message: error.message });
+	}
 };
 
 export const logout = (req, res) => {
@@ -181,6 +190,7 @@ export const resetPassword = async (req, res) => {
 export const checkAuth = async (req, res) => {
 	try {
 		const user = await User.findById(req.userId).select("-password");
+        
 		if (!user) {
 			return res.status(400).json({ success: false, message: "User not found" });
 		}
